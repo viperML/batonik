@@ -1,33 +1,24 @@
 package main
 
 import (
-	"fmt"
-
-	"github.com/viperML/batonik/batonik"
+	"github.com/viperML/batonik"
+	"github.com/viperML/batonik/colors"
+	. "github.com/viperML/batonik/modules"
 )
 
-type SampleModule struct{}
-
-func NewSampleModule() *SampleModule {
-	return &SampleModule{}
-}
-
-func (sm *SampleModule) Render() string {
-	return "Hello"
-}
-
 func main() {
-	// fmt.Println("Hello world!")
 
-	renderer := &batonik.Renderer{
-		Modules: []batonik.Module{},
+	app := &batonik.App{
+		Separator:  " ",
+		AddNewline: true,
+		Modules: []batonik.Module{
+			S(colors.Red + "Hello" + colors.Reset),
+			S("Hello"),
+			S("World"),
+			&Directory{},
+		},
 	}
 
-	renderer.Modules = append(renderer.Modules, NewSampleModule())
-	fmt.Printf("%#v\n", renderer)
+	app.Run()
 
-	for _, module := range renderer.Modules {
-		result := module.Render()
-		fmt.Println(result)
-	}
 }
