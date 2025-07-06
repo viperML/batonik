@@ -1,6 +1,7 @@
 package batonik
 
 import (
+	"fmt"
 	"strings"
 	"sync"
 )
@@ -29,7 +30,7 @@ func (a *app) AddModules(modules ...Module) *app {
 	return a
 }
 
-func (a *app) Run() string {
+func (a *app) Run() {
 	groupResults := make([]string, len(a.modules))
 	var groupWg sync.WaitGroup
 
@@ -51,5 +52,6 @@ func (a *app) Run() string {
 		}(gi, group)
 	}
 	groupWg.Wait()
-	return strings.Join(groupResults, "\n")
+	res := strings.Join(groupResults, "\n")
+	fmt.Println(res)
 }

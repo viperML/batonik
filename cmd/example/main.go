@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/viperML/batonik"
 	. "github.com/viperML/batonik/modules"
 )
@@ -12,5 +10,5 @@ func main() {
 		Variable: "SHELL",
 	}).AddModules(&Character{})
 
-	fmt.Println(app.Run())
+	app.Run()
 }

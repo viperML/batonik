@@ -9,10 +9,10 @@ type Character struct {
 
 func (mod *Character) Run() string {
 	if mod.SuccessSymbol == "" {
-		mod.SuccessSymbol = colors.Bold + colors.Green + "➜" + colors.Reset
+		mod.SuccessSymbol = colors.Bold + colors.Green + "➜ " + colors.Reset
 	}
 	if mod.ErrorSymbol == "" {
-		mod.ErrorSymbol = colors.Bold + colors.Red + "✖" + colors.Reset
+		mod.ErrorSymbol = colors.Bold + colors.Red + "✖ " + colors.Reset
 	}
 
 	// TODO: Get exit status
