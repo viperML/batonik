@@ -11,3 +11,7 @@ func (s *Simple) Run() string {
 func S(text string) *Simple {
 	return &Simple{Text: text}
 }
+
+func NewLine() *Simple {
+	return &Simple{Text: "\n"}
+}
