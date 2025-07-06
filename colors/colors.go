@@ -19,4 +19,12 @@ var (
 	BrightMagenta = "\033[95m"
 	BrightCyan    = "\033[96m"
 	BrightWhite   = "\033[97m"
+	DimBlack   = "\033[2;30m"
+	DimRed     = "\033[2;31m"
+	DimGreen   = "\033[2;32m"
+	DimYellow  = "\033[2;33m"
+	DimBlue    = "\033[2;34m"
+	DimMagenta = "\033[2;35m"
+	DimCyan    = "\033[2;36m"
+	DimWhite   = "\033[2;37m"
 )

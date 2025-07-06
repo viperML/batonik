@@ -11,11 +11,15 @@ type Directory struct {
 	Style func(string) string
 }
 
-func defaultStyle(text string) string {
-	return colors.Blue + text + colors.Reset
+func defaultDirectoryStyle(res string) string {
+	return colors.Bold + colors.BrightCyan + res + colors.Reset
 }
 
-func (d *Directory) Run() string {
+func (mod *Directory) Run() string {
+	if mod.Style == nil {
+		mod.Style = defaultDirectoryStyle
+	}
+
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return "Error getting home directory"
@@ -29,9 +33,5 @@ func (d *Directory) Run() string {
 	// Replace home directory with ~
 	cwd = strings.Replace(cwd, home, "~", 1)
 
-	if d.Style == nil {
-		d.Style = defaultStyle
-	}
-
-	return d.Style(cwd)
+	return mod.Style(cwd)
 }

@@ -20,8 +20,10 @@ func (a *App) Run() {
 		results[i] = module.Run()
 	}
 
-
 	for i := range a.Modules {
-		fmt.Println(results[i])
+		fmt.Print(results[i])
+		if i < len(a.Modules)-1 {
+			fmt.Print(a.Separator)
+		}
 	}
 }
