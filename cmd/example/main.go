@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	app := batonik.App().AddModules(&Directory{}, &Env{
+	app := batonik.App().AddModules(&Directory{}, &Git{}, &Env{
 		Variable: "SHELL",
 	}).AddModules(&Character{})
 
