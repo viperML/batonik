@@ -2,7 +2,10 @@ module github.com/viperML/batonik
 
 go 1.24.3
 
-require github.com/go-git/go-git/v5 v5.11.0
+require (
+	github.com/go-git/go-git/v5 v5.11.0
+	github.com/urfave/cli/v3 v3.3.8
+)
 
 require (
 	dario.cat/mergo v1.0.0 // indirect
