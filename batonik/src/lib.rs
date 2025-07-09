@@ -1,79 +1,97 @@
 use std::future::Future;
 use std::pin::Pin;
 
-pub struct App {
-    modules: Vec<Pin<Box<dyn Future<Output = String>>>>,
+use tokio::task::JoinSet;
+
+type Module = Pin<Box<dyn Future<Output = String> + Send + 'static>>;
+
+pub struct Batonik {
+    pub modules: Vec<Module>,
 }
 
+pub type ModuleAdder<Mod> = fn(&mut Batonik, Mod) -> &mut Batonik;
 
-impl std::fmt::Debug for Module {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let ptr = &*self.0 as *const _;
-        f.debug_tuple("Module").field(&format_args!("{:p}", ptr)).finish()
-    }
+pub trait FutureModule {
+    type This;
+    fn get_add(&self) -> ModuleAdder<Self::This>;
 }
 
-pub struct Module(Pin<Box<dyn Future<Output = String>>>);
-
-pub trait IntoModule {
-    fn into_module(self) -> Module;
+pub trait StringModule {
+    type This;
+    fn get_add(&self) -> ModuleAdder<Self::This>;
 }
 
-impl IntoModule for String {
-    fn into_module(self) -> Module {
-        let f = async {
-            return self;
-        };
-
-        Module(Box::pin(f))
-    }
-}
-
-impl<F, Fut> IntoModule for F
-where
-    F: FnOnce() -> Fut,
-    Fut: Future<Output = String> + Send + 'static,
-{
-    fn into_module(self) -> Module {
-        let fut = self();
-        Module(Box::pin(fut))
-    }
-}
-
-impl<Fut> IntoModule for Fut
-where
-    Fut: Future<Output = String> + Send + 'static
-{
-    fn into_module(self) -> Module {
-        todo!()
-    }
-}
-
-
-impl App {
+impl Batonik {
     pub fn new() -> Self {
         return Self { modules: vec![] };
     }
 
-    pub fn add<F>(mut self, future: F) -> Self
-    where
-        F: Future<Output = String> + Send + 'static,
-    {
-        let p = Box::pin(future);
-        self.modules.push(p);
-        return self;
+    fn add_fut(&mut self, fut: impl Future<Output = String> + Send + 'static) -> &mut Batonik {
+        self.modules.push(Box::pin(fut));
+        self
+    }
+
+    fn add_str(&mut self, s: impl ToString) -> &mut Batonik {
+        let s = s.to_string();
+        self.modules.push(Box::pin(async move { s }));
+        self
     }
 
     pub fn run(self) {
         let rt = tokio::runtime::Runtime::new().unwrap();
 
         rt.block_on(async {
+            let mut set = JoinSet::new();
+            let mut n = 0;
 
             for m in self.modules {
-                let res = m.await;
-                println!("{res}");
+                set.spawn(async move {
+                    let res = m.await;
+                    return (n, res);
+                });
+
+                n = n + 1;
             }
 
+            let results = set.join_all().await;
+            println!("{results:?}");
         })
     }
+}
+
+
+impl<Fut: Future<Output = String> + Send + 'static> FutureModule for Fut {
+    type This = Fut;
+    fn get_add(&self) -> ModuleAdder<Fut> {
+        Batonik::add_fut
+    }
+}
+
+impl<S: ToString> StringModule for &S {
+    type This = S;
+    fn get_add(&self) -> ModuleAdder<S> {
+        Batonik::add_str
+    }
+}
+
+#[macro_export]
+macro_rules! batonik {
+    ($app:expr => [$($module:expr),* $(,)?]) => {{
+        let mut app = $app;
+        $(
+        let module = $module;
+        let mut app = (&module).get_add()(app, module);
+        );*
+        app
+    }};
+
+    ($($module:expr),* $(,)?) => {{
+        let mut app = $crate::Batonik { modules: Vec::new() };
+        use $crate::StringModule;
+        use $crate::FutureModule;
+        $crate::batonik!(&mut app => [
+            $($module),*
+        ]);
+        app
+    }}
 }

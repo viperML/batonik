@@ -1,9 +1,8 @@
-use batonik;
+use batonik::batonik;
 
 fn main() {
-    batonik::App::new()
-        .add(async {
-            return String::from("Hello");
-        })
-        .run();
+    let b = batonik![
+        "Hello",
+        async { format!("World") },
+    ];
 }
