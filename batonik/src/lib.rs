@@ -6,10 +6,10 @@ use tokio::task::JoinSet;
 type Module = Pin<Box<dyn Future<Output = String> + Send + 'static>>;
 
 pub struct Batonik {
-    pub modules: Vec<Module>,
+    modules: Vec<Module>,
 }
 
-pub type ModuleAdder<Mod> = fn(&mut Batonik, Mod) -> &mut Batonik;
+type ModuleAdder<Mod> = fn(&mut Batonik, Mod) -> &mut Batonik;
 
 pub trait FutureModule {
     type This;
@@ -59,7 +59,6 @@ impl Batonik {
     }
 }
 
-
 impl<Fut: Future<Output = String> + Send + 'static> FutureModule for Fut {
     type This = Fut;
     fn get_add(&self) -> ModuleAdder<Fut> {
@@ -76,22 +75,21 @@ impl<S: ToString> StringModule for &S {
 
 #[macro_export]
 macro_rules! batonik {
-    ($app:expr => [$($module:expr),* $(,)?]) => {{
-        let mut app = $app;
-        $(
-        let module = $module;
-        let mut app = (&module).get_add()(app, module);
-        );*
-        app
-    }};
-
     ($($module:expr),* $(,)?) => {{
-        let mut app = $crate::Batonik { modules: Vec::new() };
-        use $crate::StringModule;
-        use $crate::FutureModule;
+        let mut app = $crate::Batonik::new();
         $crate::batonik!(&mut app => [
             $($module),*
         ]);
         app
-    }}
+    }};
+
+    ($app:expr => [$($module:expr),* $(,)?]) => {{
+        use $crate::*;
+        let mut app = $app;
+        $(
+        let module = $module;
+        let mut app = (&module).get_add()(app, module);
+        )*
+        app
+    }};
 }
