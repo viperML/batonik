@@ -1,24 +1,36 @@
+pub mod modules;
+pub use colored;
+
 use std::future::Future;
 use std::pin::Pin;
 
 use tokio::task::JoinSet;
 
-type Module = Pin<Box<dyn Future<Output = String> + Send + 'static>>;
+type RawModule = Pin<Box<dyn Future<Output = String> + Send + 'static>>;
 
 pub struct Batonik {
-    modules: Vec<Module>,
+    modules: Vec<RawModule>,
 }
 
-type ModuleAdder<Mod> = fn(&mut Batonik, Mod) -> &mut Batonik;
+type ModuleAdder<M> = fn(&mut Batonik, M) -> &mut Batonik;
 
-pub trait FutureModule {
+pub trait AutoFutureModule {
     type This;
     fn get_add(&self) -> ModuleAdder<Self::This>;
 }
 
-pub trait StringModule {
+pub trait AutoStringModule {
     type This;
     fn get_add(&self) -> ModuleAdder<Self::This>;
+}
+
+pub trait AutoModuleModule {
+    type This;
+    fn get_add(&self) -> ModuleAdder<Self::This>;
+}
+
+pub trait Module {
+    fn run(self) -> impl Future<Output = String> + Send + 'static;
 }
 
 impl Batonik {
@@ -37,6 +49,11 @@ impl Batonik {
         self
     }
 
+    fn add_module(&mut self, m: impl Module) -> &mut Batonik {
+        self.modules.push(Box::pin(m.run()));
+        self
+    }
+
     pub fn render(self) -> String {
         let rt = tokio::runtime::Runtime::new().unwrap();
 
@@ -52,13 +69,19 @@ impl Batonik {
                 });
             }
 
-            let results = set.join_all().await;
+            let mut results = set.join_all().await;
+            results.sort_by(|&(left_idx, _), (right_idx, _)| left_idx.cmp(right_idx));
 
-            for i in 0..total {
-                if i != 0 {
-                    res.push(' ');
+            for (idx, module_res) in results {
+                eprintln!("{idx:?} -> {module_res}");
+                if module_res.is_empty() {
+                    continue;
+                } else {
+                    if idx != 0 {
+                        res.push(' ');
+                    }
+                    res.push_str(&module_res);
                 }
-                res.push_str(&results[i].1);
             }
         });
 
@@ -71,17 +94,25 @@ impl Batonik {
     }
 }
 
-impl<Fut: Future<Output = String> + Send + 'static> FutureModule for Fut {
+impl<Fut: Future<Output = String> + Send + 'static> AutoFutureModule for Fut {
     type This = Fut;
     fn get_add(&self) -> ModuleAdder<Fut> {
         Batonik::add_fut
     }
 }
 
-impl<S: ToString> StringModule for &S {
+impl<S: ToString> AutoStringModule for &S {
     type This = S;
     fn get_add(&self) -> ModuleAdder<S> {
         Batonik::add_str
+    }
+}
+
+impl<M: Module> AutoModuleModule for M {
+    type This = M;
+
+    fn get_add(&self) -> ModuleAdder<Self::This> {
+        Batonik::add_module
     }
 }
 
