@@ -5,4 +5,6 @@ fn main() {
         "Hello",
         async { format!("World") },
     ];
+
+    b.run();
 }

@@ -37,25 +37,37 @@ impl Batonik {
         self
     }
 
-    pub fn run(self) {
+    pub fn render(self) -> String {
         let rt = tokio::runtime::Runtime::new().unwrap();
 
+        let mut res = String::new();
         rt.block_on(async {
             let mut set = JoinSet::new();
-            let mut n = 0;
+            let total = self.modules.len();
 
-            for m in self.modules {
+            for (n, module) in self.modules.into_iter().enumerate() {
                 set.spawn(async move {
-                    let res = m.await;
+                    let res = module.await;
                     return (n, res);
                 });
-
-                n = n + 1;
             }
 
             let results = set.join_all().await;
-            println!("{results:?}");
-        })
+
+            for i in 0..total {
+                if i != 0 {
+                    res.push(' ');
+                }
+                res.push_str(&results[i].1);
+            }
+        });
+
+        return res;
+    }
+
+    pub fn run(self) {
+        let res = self.render();
+        print!("{res}");
     }
 }
 
