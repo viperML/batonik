@@ -3,7 +3,7 @@ use batonik::colored::Colorize;
 use batonik::modules::*;
 
 fn main() {
-    let b = batonik![
+    let mut b = batonik![
         Directory::new(),
         async {
             let direnv = std::env::var("DIRENV_DIR").is_ok();
@@ -14,7 +14,11 @@ fn main() {
             }
         },
         Env::new("EDITOR"),
+        Git,
+        "\n$",
     ];
+
+    b.final_space(false);
 
     b.run();
 }

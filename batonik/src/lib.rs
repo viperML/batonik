@@ -10,6 +10,7 @@ type RawModule = Pin<Box<dyn Future<Output = String> + Send + 'static>>;
 
 pub struct Batonik {
     modules: Vec<RawModule>,
+    final_space: bool,
 }
 
 type ModuleAdder<M> = fn(&mut Batonik, M) -> &mut Batonik;
@@ -35,7 +36,11 @@ pub trait Module {
 
 impl Batonik {
     pub fn new() -> Self {
-        return Self { modules: vec![] };
+        return Self { modules: vec![], final_space: true };
+    }
+
+    pub fn final_space(&mut self, yes: bool) {
+        self.final_space = yes;
     }
 
     fn add_fut(&mut self, fut: impl Future<Output = String> + Send + 'static) -> &mut Batonik {
