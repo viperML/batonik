@@ -133,12 +133,13 @@ impl Batonik {
                     .to_string_lossy()
                     .to_string();
 
+                let fully_init = *sub_matches
+                    .get_one::<bool>("print-full-init")
+                    .unwrap_or(&false);
+
                 match shell.as_str() {
                     "fish" => {
-                        if *sub_matches
-                            .get_one::<bool>("print-full-init")
-                            .unwrap_or(&false)
-                        {
+                        if fully_init {
                             print!(
                                 "function fish_prompt
     {self_cmd} prompt
@@ -149,7 +150,16 @@ end"
                         }
                     }
                     "bash" => {
-                        todo!();
+                        if fully_init {
+                            print!(
+                                "function __batonik_prompt() {{
+    PS1=\"$({self_cmd} prompt)\"
+}}
+PROMPT_COMMAND=\"__batonik_prompt\""
+                            );
+                        } else {
+                            print!("source <({self_cmd} init bash --print-full-init)");
+                        }
                     }
                     "zsh" => {
                         todo!();
