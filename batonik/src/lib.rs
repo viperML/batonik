@@ -1,7 +1,9 @@
 pub mod modules;
+use clap::{Arg, Command};
 pub use colored;
 
 use std::future::Future;
+use std::path::PathBuf;
 use std::pin::Pin;
 
 use tokio::task::JoinSet;
@@ -36,7 +38,10 @@ pub trait Module {
 
 impl Batonik {
     pub fn new() -> Self {
-        return Self { modules: vec![], final_space: true };
+        return Self {
+            modules: vec![],
+            final_space: true,
+        };
     }
 
     pub fn final_space(&mut self, yes: bool) {
@@ -97,8 +102,67 @@ impl Batonik {
     }
 
     pub fn run(self) {
-        let res = self.render();
-        print!("{res}");
+        let matches = Command::new("batonik")
+            .subcommand_required(true)
+            .arg_required_else_help(true)
+            .subcommand(
+                Command::new("init")
+                    .about("Prints the shell function used to execute batonik")
+                    .arg(
+                        Arg::new("shell")
+                            .help("The shell to generate the function for")
+                            .required(true)
+                            .value_parser(["bash", "fish", "zsh"]),
+                    )
+                    .arg(
+                        Arg::new("print-full-init")
+                            .long("print-full-init")
+                            .help("Print the full shell init script")
+                            .action(clap::ArgAction::SetTrue),
+                    ),
+            )
+            .subcommand(Command::new("prompt").about("Prints the full starship prompt"))
+            .get_matches();
+
+        match matches.subcommand() {
+            Some(("init", sub_matches)) => {
+                let shell = sub_matches.get_one::<String>("shell").unwrap();
+                let self_cmd = PathBuf::from(std::env::args().next().unwrap())
+                    .canonicalize()
+                    .expect("failed to canonicalize argv0")
+                    .to_string_lossy()
+                    .to_string();
+
+                match shell.as_str() {
+                    "fish" => {
+                        if *sub_matches
+                            .get_one::<bool>("print-full-init")
+                            .unwrap_or(&false)
+                        {
+                            print!(
+                                "function fish_prompt
+    {self_cmd} prompt
+end"
+                            );
+                        } else {
+                            print!("source ({self_cmd} init fish --print-full-init | psub)");
+                        }
+                    }
+                    "bash" => {
+                        todo!();
+                    }
+                    "zsh" => {
+                        todo!();
+                    }
+                    _ => unreachable!(),
+                };
+            }
+            Some(("prompt", _)) => {
+                let res = self.render();
+                print!("{res}");
+            }
+            _ => unreachable!(),
+        }
     }
 }
 
