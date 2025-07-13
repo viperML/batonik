@@ -65,7 +65,6 @@ impl Batonik {
         let mut res = String::new();
         rt.block_on(async {
             let mut set = JoinSet::new();
-            let total = self.modules.len();
 
             for (n, module) in self.modules.into_iter().enumerate() {
                 set.spawn(async move {
@@ -87,6 +86,10 @@ impl Batonik {
                     }
                     res.push_str(&module_res);
                 }
+            }
+
+            if self.final_space {
+                res.push(' ');
             }
         });
 
