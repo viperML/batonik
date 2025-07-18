@@ -1,3 +1,4 @@
+use gix::progress::Discard;
 use tokio::task::spawn_blocking;
 
 use crate::Module;
@@ -6,17 +7,16 @@ pub struct Git;
 
 impl Module for Git {
     async fn run(self) -> String {
-        let hn = spawn_blocking(|| {
-            let repo = match gix::discover(".") {
-                Ok(repo) => repo,
-                Err(_) => return String::default(),
-            };
+        let repo = match gix::discover(".") {
+            Ok(repo) => repo,
+            Err(_) => return String::default(),
+        };
 
-            repo.head_name().ok().flatten().unwrap().to_string()
-        })
-        .await
-        .unwrap();
+        let branch = repo.head_name().ok().flatten().unwrap().to_string();
 
-        format!("branch: {hn}")
+        let status = repo.status(Discard).unwrap().index_worktree_options_mut(cb);
+
+
+        format!("branch: {branch}")
     }
 }

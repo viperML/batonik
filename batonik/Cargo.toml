@@ -6,5 +6,5 @@ edition = "2024"
 [dependencies]
 clap = "4.5.41"
 colored = "3.0.0"
-gix = { version = "0.72.1", default-features = false, features = ["parallel"] }
+gix = { version = "0.72.1", default-features = false, features = ["parallel", "status"] }
 tokio = { version = "1.46.1", features = ["full"] }
